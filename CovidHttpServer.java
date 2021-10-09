@@ -4,10 +4,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.List;
 
-import com.covid.basic.CaseData;
-import com.covid.basic.VaccinationData;
+import com.covid.metrics.CovidStatusCheck;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -53,26 +51,13 @@ public class CovidHttpServer {
 			    OutputStream os = exchange.getResponseBody();
 			    os.write(fis.readAllBytes());
 			    if(state != null) {
-			    	getCOVIDData(state, os);
+			    	CovidStatusCheck csc = new CovidStatusCheck(state);
+			    	String checkStatus = csc.check();
+		    		os.write(checkStatus.getBytes());
 			    }
 			    os.close();
 			}
 		}
-		private void getCOVIDData(String state, OutputStream os) {
-			try {
-				List<CaseData> caseData = CaseData.initialiseCaseData(state);
-				List<VaccinationData> vaccinationData = VaccinationData.initialiseVaccinationData(state);
-				os.write(caseData.get(0).toString().getBytes());
-				os.write(vaccinationData.get(0).toString().getBytes());
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-	}
-
-	public static void main(String[] args) {
-		CovidHttpServer server = new CovidHttpServer();
-		server.start();
 	}
 
 }
