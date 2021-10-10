@@ -43,7 +43,7 @@ public class CovidStatusCheck {
 	public Map<String, String> check() {
 		Map<String, String> result = new HashMap<>();
 		result.put(RAGCOLOUR, RED_RESULT);
-		result.put(DAILYCASEINCREASING, "");
+		result.put(DAILYCASEINCREASING, "No");
 		result.put(TOTALVACCINATED, "");
 		
 		totalActiveCheck(result);
@@ -66,7 +66,11 @@ public class CovidStatusCheck {
 		CaseData latestCaseData = getCovidByState().getCaseData().get(0);
 		int totalActive = Math.abs(latestCaseData.getConfirmed() - (latestCaseData.getDeceased() + latestCaseData.getRecovered()));
 		double totalActivePer = totalActive / getCovidByState().getPopulation();
-		result.put(TOTALACTIVE, String.valueOf(totalActivePer));
+		if(totalActivePer < 1) {
+			result.put(TOTALACTIVE, "< 1%");	
+		} else {
+			result.put(TOTALACTIVE, String.valueOf(totalActivePer));
+		}
 		if(totalActivePer > TOTAL_ACTIVE_RED_THRESHOLD) {
 			result.put(RAGCOLOUR, RED_RESULT);
 		} else if(totalActivePer > TOTAL_ACTIVE_AMBER_THRESHOLD) {
@@ -101,7 +105,7 @@ public class CovidStatusCheck {
 			
 			if(increaseInCases.equals(reversedIncreaseInCases)) {
 				result.put(RAGCOLOUR, RED_RESULT);
-				result.put(DAILYCASEINCREASING, "true");
+				result.put(DAILYCASEINCREASING, "Yes");
 			}
 		}
 	}	
@@ -113,7 +117,11 @@ public class CovidStatusCheck {
 			// Vaccination % count check
 			VaccinationData vd = getCovidByState().getVaccinationData().get(0);
 			double percentageVaccinated = vd.getDosesAdministered() / getCovidByState().getPopulation();
-			result.put(TOTALVACCINATED, String.valueOf(percentageVaccinated));
+			if(percentageVaccinated < 1) {
+				result.put(TOTALVACCINATED, "< 1%");
+			} else {
+				result.put(TOTALVACCINATED, String.valueOf(percentageVaccinated));
+			}
 			if(percentageVaccinated > VACCINATION_THRESHOLD_GREEN) {
 				result.put(RAGCOLOUR, GREEN_RESULT);
 			} else  if (percentageVaccinated > VACCINATION_THRESHOLD_AMBER) {
