@@ -3,7 +3,9 @@ package com.covid.metrics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.covid.basic.COVIDDataByState;
 import com.covid.basic.CaseData;
@@ -11,11 +13,15 @@ import com.covid.basic.VaccinationData;
 
 public class CovidStatusCheck {
 	private static final int DAYS_TO_CHECK = 30;
-	private static final int VACCINATION_THRESHOLD_GREEN = 60;
-	private static final int VACCINATION_THRESHOLD_AMBER = 40;
+	private static final int VACCINATION_THRESHOLD_GREEN = 90;
+	private static final int VACCINATION_THRESHOLD_AMBER = 75;
 	private static final int CONFIRMED_TREND_CHECK_DAYS_MAX = 7;
-	private static final int TOTAL_ACTIVE_AMBER_THRESHOLD = 5;
-	private static final int TOTAL_ACTIVE_RED_THRESHOLD = 10;
+	private static final int TOTAL_ACTIVE_AMBER_THRESHOLD = 1;
+	private static final int TOTAL_ACTIVE_RED_THRESHOLD = 2;
+	private static final String TOTALACTIVE="TOTALACTIVE";
+	private static final String TOTALVACCINATED="TOTALVACCINATED";
+	private static final String DAILYCASEINCREASING="DAILYCASEINCREASING";
+	private static final String RAGCOLOUR="RAGCOLOUR";
 	
 	private static final String GREEN_RESULT = "<b>GREEN</b>";
 	private static final String AMBER_RESULT = "<b>AMBER</b>";
@@ -34,41 +40,48 @@ public class CovidStatusCheck {
 	 * Checks COVID data for status across Red, Green and Amber 
 	 * @return
 	 */
-	public String check() {
-		String result = RED_RESULT;
+	public Map<String, String> check() {
+		Map<String, String> result = new HashMap<>();
+		result.put(RAGCOLOUR, RED_RESULT);
+		result.put(DAILYCASEINCREASING, "");
+		result.put(TOTALVACCINATED, "");
 		
-		result = totalActiveCheck();
+		totalActiveCheck(result);
 		
-		result = dailyIncreaseTrendCheck(result);		
+		dailyIncreaseTrendCheck(result);		
 		
-		result = vaccinationCheck(result);
-	
+		vaccinationCheck(result);
+
+		/*
+		 * TOTALACTIVE TOTALVACCINATED DAILYCASEINCREASING RAGCOLOUR
+		 */
 		return result;
 	}
 
 	/**
 	 * Total active count check
-	 * @return R/A/G
+	 * @param result
 	 */
-	private String totalActiveCheck() {
+	private void totalActiveCheck(Map<String, String> result) {
 		CaseData latestCaseData = getCovidByState().getCaseData().get(0);
-		int totalActive = latestCaseData.getConfirmed() - (latestCaseData.getDeceased() + latestCaseData.getRecovered());
-		if(totalActive / getCovidByState().getPopulation() > TOTAL_ACTIVE_RED_THRESHOLD) {
-			return RED_RESULT;
-		} else if(totalActive / getCovidByState().getPopulation() > TOTAL_ACTIVE_AMBER_THRESHOLD) {
-			return AMBER_RESULT;
+		int totalActive = Math.abs(latestCaseData.getConfirmed() - (latestCaseData.getDeceased() + latestCaseData.getRecovered()));
+		double totalActivePer = totalActive / getCovidByState().getPopulation();
+		result.put(TOTALACTIVE, String.valueOf(totalActivePer));
+		if(totalActivePer > TOTAL_ACTIVE_RED_THRESHOLD) {
+			result.put(RAGCOLOUR, RED_RESULT);
+		} else if(totalActivePer > TOTAL_ACTIVE_AMBER_THRESHOLD) {
+			result.put(RAGCOLOUR, AMBER_RESULT);
 		} else {
-			return GREEN_RESULT;
+			result.put(RAGCOLOUR, GREEN_RESULT);
 		}
 		
 	}	
 	/**
 	 * Checks daily increase to see an increasing trend
 	 * @param result
-	 * @return red/passed in 
 	 */
-	private String dailyIncreaseTrendCheck(String result) {
-		if(!RED_RESULT.equals(result)) {
+	private void dailyIncreaseTrendCheck(Map<String, String> result) {
+		if(!RED_RESULT.equals(result.get(RAGCOLOUR))) {
 			List<CaseData> caseData = getCovidByState().getCaseData();
 			
 			List<Integer> increaseInCases = new ArrayList<>();
@@ -87,27 +100,26 @@ public class CovidStatusCheck {
 			});
 			
 			if(increaseInCases.equals(reversedIncreaseInCases)) {
-				return RED_RESULT;
+				result.put(RAGCOLOUR, RED_RESULT);
+				result.put(DAILYCASEINCREASING, "true");
 			}
 		}
-		return result;
 	}	
 	/**
 	 * Checks the vaccination %
-	 * @return Red/Amber/Green
 	 */
-	private String vaccinationCheck(String result) {
-		if(!RED_RESULT.equals(result)) {
+	private void vaccinationCheck(Map<String, String> result) {
+		if(!RED_RESULT.equals(result.get(RAGCOLOUR))) {
 			// Vaccination % count check
 			VaccinationData vd = getCovidByState().getVaccinationData().get(0);
-			int percentageVaccinated = vd.getDosesAdministered() / getCovidByState().getPopulation(); 
+			double percentageVaccinated = vd.getDosesAdministered() / getCovidByState().getPopulation();
+			result.put(TOTALVACCINATED, String.valueOf(percentageVaccinated));
 			if(percentageVaccinated > VACCINATION_THRESHOLD_GREEN) {
-				return GREEN_RESULT;
+				result.put(RAGCOLOUR, GREEN_RESULT);
 			} else  if (percentageVaccinated > VACCINATION_THRESHOLD_AMBER) {
-				return AMBER_RESULT;
+				result.put(RAGCOLOUR, AMBER_RESULT);
 			}
 		}
-		return result;
 	}
 
 

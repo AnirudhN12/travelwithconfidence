@@ -1,9 +1,12 @@
 package com.covid.server;
 
-import java.io.FileInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
 
 import com.covid.metrics.CovidStatusCheck;
 import com.sun.net.httpserver.HttpContext;
@@ -17,6 +20,8 @@ import com.sun.net.httpserver.HttpServer;
  *
  */
 public class CovidHttpServer {
+	
+	private static final String TABLE_HIDDEN="table, th, td { visibility: hidden }"; 
 	
 	private final HttpServer httpServer; 
 	
@@ -44,17 +49,32 @@ public class CovidHttpServer {
 						exchange.getRequestURI().toString().
 							split("\\?")[1].
 							split("=")[1];
+				state = state.trim().replace("+", " ");
 				System.out.println(state);
 			}
-			try(FileInputStream fis = new FileInputStream("src/com/covid/server/website.html")) {
+			try(BufferedReader reader= Files.newBufferedReader(Paths.get("src/com/covid/server/website.html"))) {
+				StringBuilder builder = new StringBuilder();
+				String line = null;
+				while((line = reader.readLine()) != null) {
+					builder.append(line);
+				}
+				String html = builder.toString();
+			    if(state != null) {
+			    	final String optionState = "<option value =\"" + state + "\">" + state + "</option>";
+			    	final String optionStateSelected = "<option value =\"" + state + "\" selected=\"true\">" + state + "</option>";
+			    	html = html.replace(optionState, optionStateSelected);			    	
+			    	CovidStatusCheck csc = new CovidStatusCheck(state);
+			    	Map<String, String> checkStatus = csc.check();
+		    		for(String key: checkStatus.keySet()) {
+		    			html = html.replace(key, checkStatus.get(key));
+		    		}
+			    } else {
+			    	int endOfStyle = html.indexOf("</style>");
+			    	html = html.substring(0, endOfStyle) + TABLE_HIDDEN + html.substring(endOfStyle);
+			    }
 			    exchange.sendResponseHeaders(200, 0);
 			    OutputStream os = exchange.getResponseBody();
-			    os.write(fis.readAllBytes());
-			    if(state != null) {
-			    	CovidStatusCheck csc = new CovidStatusCheck(state);
-			    	String checkStatus = csc.check();
-		    		os.write(checkStatus.getBytes());
-			    }
+			    os.write(html.getBytes());			    
 			    os.close();
 			}
 		}
