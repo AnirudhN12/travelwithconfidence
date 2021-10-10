@@ -14,7 +14,7 @@ import com.covid.basic.VaccinationData;
 public class CovidStatusCheck {
 	private static final int DAYS_TO_CHECK = 30;
 	private static final int VACCINATION_THRESHOLD_GREEN = 90;
-	private static final int VACCINATION_THRESHOLD_AMBER = 75;
+	private static final int VACCINATION_THRESHOLD_AMBER = 50;
 	private static final int CONFIRMED_TREND_CHECK_DAYS_MAX = 7;
 	private static final int TOTAL_ACTIVE_AMBER_THRESHOLD = 1;
 	private static final int TOTAL_ACTIVE_RED_THRESHOLD = 2;
