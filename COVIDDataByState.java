@@ -1,8 +1,13 @@
 package com.covid.basic;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Data for a state
@@ -14,8 +19,9 @@ public class COVIDDataByState {
 	
 	private final String state;
 	private final int noOfDays;
-	private final List<CaseData> caseDataStack;
-	private final List<VaccinationData> vaccinationDataLst;
+	private List<CaseData> caseDataStack;
+	private List<VaccinationData> vaccinationDataLst;
+	private int statePopulation = -1;
 
 	/**
 	 * Constructor
@@ -26,12 +32,7 @@ public class COVIDDataByState {
 		this.noOfDays = noOfdays_;
 		this.state = state_;
 		
-		try {
-			this.caseDataStack = CaseData.initialiseCaseData(getState());
-			this.vaccinationDataLst = VaccinationData.initialiseVaccinationData(getState());
-		} catch (IOException e) {
-			throw new RuntimeException("Error while invoking Covid19 API", e);
-		}
+		initialise();
 	}
 	/**
 	 * The required data for the input number of days 
@@ -69,8 +70,35 @@ public class COVIDDataByState {
 		}
 		return builder.toString();
 	}
+	/**
+	 * Population of the state
+	 * @return population
+	 */
+	public int getPopulation() {
+		return this.statePopulation;
+	}
 
-
+	/**
+	 * Initialises all
+	 */
+	private void initialise() {
+		try {
+			this.caseDataStack = CaseData.initialiseCaseData(getState());
+			this.vaccinationDataLst = VaccinationData.initialiseVaccinationData(getState());
+			try(BufferedReader reader = Files.newBufferedReader(Paths.get("src/com/covid/basic/statesList.csv"))) {
+				reader.readLine(); //Skip header
+				String line = null;
+				while((line = reader.readLine()) != null) {
+					String[] fields = line.split(",");
+					if(getState().equalsIgnoreCase(fields[0].trim())) {
+						this.statePopulation = Integer.parseInt(fields[1]);
+					}
+				}
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("Error while invoking Covid19 API", e);
+		}
+	}
 	/**
 	 * @return the state
 	 */

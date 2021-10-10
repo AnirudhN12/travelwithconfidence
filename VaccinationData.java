@@ -13,15 +13,19 @@ import java.util.List;
 public class VaccinationData {
 	private static final String COVID19_VACCINATION_API_URL = "https://data.covid19india.org/csv/latest/cowin_vaccine_data_statewise.csv";	
 	
+	private final String date;
 	private final String state;
 	private final int dosesAdministered;
 
 	/**
-	 * @param dosesAdministered
+	 * @param dosesAdministered_
+	 * @param date_
+	 * @param state_
 	 */
-	public VaccinationData(int dosesAdministered_, String state_) {
+	public VaccinationData(int dosesAdministered_, String date_, String state_) {
 		super();
 		this.dosesAdministered = dosesAdministered_;
+		this.date = date_;
 		this.state = state_;
 	}
 	/**
@@ -33,12 +37,12 @@ public class VaccinationData {
 	/**
 	 * @return the state
 	 */
-	public String getState() {
-		return state;
+	public String getDate() {
+		return date;
 	}	
 	@Override
 	public String toString() {
-		return "VaccinationData [state=" + state + ", dosesAdministered=" + dosesAdministered + "]";
+		return "VaccinationData [date=" + getDate() + ", dosesAdministered=" + getDosesAdministered() + "]";
 	}
 	/**
 	 * Initialises the vaccination data
@@ -52,15 +56,23 @@ public class VaccinationData {
 			while((line = reader.readLine()) != null) {
 				String[] fields = line.split(",");
 				if(fields.length >= 3) {
-					if(state.equalsIgnoreCase(fields[1]) && (fields[2]!=null && !fields[2].trim().isEmpty())) {
-						vaccinationData.add(new VaccinationData(Integer.parseInt(fields[2]), fields[0]));
+					if(state.equalsIgnoreCase(fields[1]) && (fields[6]!=null && !fields[6].trim().isEmpty())) {
+						vaccinationData.add(new VaccinationData(Integer.parseInt(fields[6]), fields[0], fields[1]));
 					}
 				}
 			}
 		}
 		return vaccinationData;
 	}
+	/**
+	 * @return the state
+	 */
+	public String getState() {
+		return state;
+	}
 
 	
 
 }
+
+
